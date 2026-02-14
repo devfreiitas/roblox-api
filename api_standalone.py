@@ -29,7 +29,7 @@ def health_check():
 def get_player_data(roblox_user_id):
     try:
         result = db.client.table('players').select(
-            'class, team, tier, total'
+            'class, team, total'
         ).eq('roblox_user_id', roblox_user_id).execute()
         
         if result.data and len(result.data) > 0:
@@ -39,7 +39,6 @@ def get_player_data(roblox_user_id):
                 'data': {
                     'Class': player_data.get('class') or 'Unknown',
                     'Team': player_data.get('team') or 'FREE-AGENT',
-                    'Tier': player_data.get('tier') or 'N/A',
                     'Over': player_data.get('total') or 0
                 }
             })
@@ -49,7 +48,6 @@ def get_player_data(roblox_user_id):
                 'data': {
                     'Class': 'Unknown',
                     'Team': 'FREE-AGENT',
-                    'Tier': 'N/A',
                     'Over': 0
                 }
             })
