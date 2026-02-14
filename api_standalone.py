@@ -3,6 +3,7 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from database_supabase import Database
+from keep_alive import start_keepalive
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,6 +57,8 @@ def get_player_data(roblox_user_id):
 if __name__ == '__main__':
     import asyncio
     asyncio.run(db.connect())
+    
+    start_keepalive()
     
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
