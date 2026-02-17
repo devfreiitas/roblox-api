@@ -66,7 +66,7 @@ def get_player_data(roblox_user_id):
 def get_all_players():
     try:
         result = db.client.table('players').select(
-            'roblox_user_id, username, class, team, wage, cup_tied, penalty, role'
+            'roblox_user_id, roblox_username, class, team, wage, cup_tied, penalty, role'
         ).execute()
         
         if result.data:
