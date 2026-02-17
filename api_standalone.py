@@ -30,7 +30,7 @@ def health_check():
 def get_player_data(roblox_user_id):
     try:
         result = db.client.table('players').select(
-            'class, team, wage'
+            'class, team, wage, cup_tied, penalty, role'
         ).eq('roblox_user_id', roblox_user_id).execute()
         
         if result.data and len(result.data) > 0:
@@ -40,7 +40,10 @@ def get_player_data(roblox_user_id):
                 'data': {
                     'Class': player_data.get('class') or 'Unknown',
                     'Team': player_data.get('team') or 'FREE-AGENT',
-                    'Wage': player_data.get('wage') or 0
+                    'Wage': player_data.get('wage') or 0,
+                    'Cuptied': player_data.get('cup_tied') or False,
+                    'Penalty': player_data.get('penalty') or 0,
+                    'RoleTeam': player_data.get('role') or 'Player'
                 }
             })
         else:
@@ -49,7 +52,10 @@ def get_player_data(roblox_user_id):
                 'data': {
                     'Class': 'Unknown',
                     'Team': 'FREE-AGENT',
-                    'Wage': 0
+                    'Wage': 0,
+                    'Cuptied': False,
+                    'Penalty': 0,
+                    'RoleTeam': 'Player'
                 }
             })
     except Exception as e:
