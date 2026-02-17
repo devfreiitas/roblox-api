@@ -74,7 +74,7 @@ def get_all_players():
             for player in result.data:
                 players_list.append({
                     'UserId': player.get('roblox_user_id'),
-                    'Name': player.get('username') or 'Unknown',
+                    'Name': player.get('roblox_username') or 'Unknown',
                     'Class': player.get('class') or 'Unknown',
                     'Team': player.get('team') or 'FREE-AGENT',
                     'Wage': player.get('wage') or 0,
