@@ -62,6 +62,40 @@ def get_player_data(roblox_user_id):
         logging.error(f"Error fetching player data: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/players', methods=['GET'])
+def get_all_players():
+    try:
+        result = db.client.table('players').select(
+            'roblox_user_id, username, class, team, wage, cup_tied, penalty, role'
+        ).execute()
+        
+        if result.data:
+            players_list = []
+            for player in result.data:
+                players_list.append({
+                    'UserId': player.get('roblox_user_id'),
+                    'Name': player.get('username') or 'Unknown',
+                    'Class': player.get('class') or 'Unknown',
+                    'Team': player.get('team') or 'FREE-AGENT',
+                    'Wage': player.get('wage') or 0,
+                    'Cuptied': player.get('cup_tied') or False,
+                    'Penalty': player.get('penalty') or 0,
+                    'RoleTeam': player.get('role') or 'Player'
+                })
+            
+            return jsonify({
+                'success': True,
+                'data': players_list
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'data': []
+            })
+    except Exception as e:
+        logging.error(f"Error fetching all players: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     import asyncio
     asyncio.run(db.connect())
