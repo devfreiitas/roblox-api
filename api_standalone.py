@@ -106,10 +106,6 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=False)
 @app.route('/api/bans/check/<int:roblox_user_id>', methods=['GET'])
 def check_ban_by_roblox(roblox_user_id):
-    """
-    Check if a Roblox user is banned/blacklisted.
-    Returns ban info so the game can block them.
-    """
     try:
         result = (
             db.client.table('bans')
@@ -144,12 +140,43 @@ def check_ban_by_roblox(roblox_user_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/blacklist/check/<int:roblox_user_id>', methods=['GET'])
+def check_player_blacklist(roblox_user_id):
+    try:
+        result = (
+            db.client.table('bans')
+            .select('id, ban_type, reason, is_active')
+            .eq('roblox_user_id', roblox_user_id)
+            .eq('ban_type', 'blacklist_player')
+            .eq('is_active', True)
+            .limit(1)
+            .execute()
+        )
+
+        if result.data and len(result.data) > 0:
+            ban = result.data[0]
+            return jsonify({
+                'success': True,
+                'is_blacklisted': True,
+                'data': {
+                    'ban_type': ban.get('ban_type'),
+                    'reason': ban.get('reason'),
+                }
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'is_blacklisted': False,
+                'data': None
+            })
+
+    except Exception as e:
+        logging.error(f"Error checking blacklist for roblox_user_id {roblox_user_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/blacklist/league/<int:league_group_id>', methods=['GET'])
 def check_league_blacklist(league_group_id):
-    """
-    Returns all active blacklisted players for a given Roblox league group ID.
-    The game uses this to prevent blacklisted users from joining matches.
-    """
     try:
         result = (
             db.client.table('bans')
@@ -182,9 +209,6 @@ def check_league_blacklist(league_group_id):
 
 @app.route('/api/blacklist/players', methods=['GET'])
 def get_player_blacklist():
-    """
-    Returns all globally blacklisted players (blacklist_player type).
-    """
     try:
         result = (
             db.client.table('bans')
