@@ -82,28 +82,13 @@ def get_all_players():
                     'Penalty': player.get('penalty') or 0,
                     'RoleTeam': player.get('role') or 'Player'
                 })
-            
-            return jsonify({
-                'success': True,
-                'data': players_list
-            })
+            return jsonify({'success': True, 'data': players_list})
         else:
-            return jsonify({
-                'success': True,
-                'data': []
-            })
+            return jsonify({'success': True, 'data': []})
     except Exception as e:
         logging.error(f"Error fetching all players: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-if __name__ == '__main__':
-    import asyncio
-    asyncio.run(db.connect())
-    
-    start_keepalive()
-    
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
 @app.route('/api/bans/check/<int:roblox_user_id>', methods=['GET'])
 def check_ban_by_roblox(roblox_user_id):
     try:
@@ -129,11 +114,7 @@ def check_ban_by_roblox(roblox_user_id):
                 }
             })
         else:
-            return jsonify({
-                'success': True,
-                'is_banned': False,
-                'data': None
-            })
+            return jsonify({'success': True, 'is_banned': False, 'data': None})
 
     except Exception as e:
         logging.error(f"Error checking ban for roblox_user_id {roblox_user_id}: {e}")
@@ -164,11 +145,7 @@ def check_player_blacklist(roblox_user_id):
                 }
             })
         else:
-            return jsonify({
-                'success': True,
-                'is_blacklisted': False,
-                'data': None
-            })
+            return jsonify({'success': True, 'is_blacklisted': False, 'data': None})
 
     except Exception as e:
         logging.error(f"Error checking blacklist for roblox_user_id {roblox_user_id}: {e}")
@@ -226,12 +203,49 @@ def get_player_blacklist():
                 'reason': row.get('reason'),
             })
 
-        return jsonify({
-            'success': True,
-            'count': len(blacklisted),
-            'data': blacklisted,
-        })
+        return jsonify({'success': True, 'count': len(blacklisted), 'data': blacklisted})
 
     except Exception as e:
         logging.error(f"Error fetching player blacklist: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/blacklist/league-groups', methods=['GET'])
+def get_blacklisted_league_groups():
+    """
+    Returns all unique league group IDs that currently have active blacklist entries.
+    Used by Roblox scripts so they don't need hardcoded group ID lists.
+    Response: { "success": true, "count": N, "data": [{ "league_group_id": 123 }, ...] }
+    """
+    try:
+        result = (
+            db.client.table('bans')
+            .select('league_group_id')
+            .eq('ban_type', 'blacklist_league')
+            .eq('is_active', True)
+            .execute()
+        )
+
+        seen = set()
+        groups = []
+        for row in (result.data or []):
+            gid = row.get('league_group_id')
+            if gid and gid not in seen:
+                seen.add(gid)
+                groups.append({'league_group_id': gid})
+
+        return jsonify({'success': True, 'count': len(groups), 'data': groups})
+
+    except Exception as e:
+        logging.error(f"Error fetching blacklisted league groups: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(db.connect())
+
+    start_keepalive()
+
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)
