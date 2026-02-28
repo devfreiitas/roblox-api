@@ -66,7 +66,7 @@ def get_player_data(roblox_user_id):
 def get_all_players():
     try:
         result = db.client.table('players').select(
-            'roblox_user_id, roblox_username, class, team, wage, cup_tied, penalty, role'
+            'roblox_user_id, roblox_username, class, team, wage, cup_tied, penalty, role, discord_id'
         ).execute()
         
         if result.data:
@@ -80,7 +80,8 @@ def get_all_players():
                     'Wage': player.get('wage') or 0,
                     'Cuptied': player.get('cup_tied') or False,
                     'Penalty': player.get('penalty') or 0,
-                    'RoleTeam': player.get('role') or 'Player'
+                    'RoleTeam': player.get('role') or 'Player',
+                    'DiscordId': player.get('discord_id') or None
                 })
             return jsonify({'success': True, 'data': players_list})
         else:
@@ -239,81 +240,6 @@ def get_blacklisted_league_groups():
     except Exception as e:
         logging.error(f"Error fetching blacklisted league groups: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/teams', methods=['GET'])
-def get_all_teams():
-    try:
-        result = db.client.table('teams').select(
-            'team_name, manager_id, abbreviation, created_at'
-        ).execute()
-
-        if result.data:
-            teams_list = []
-            for team in result.data:
-                teams_list.append({
-                    'TeamName': team.get('team_name') or 'Unknown',
-                    'ManagerId': team.get('manager_id'),
-                    'Abbreviation': team.get('abbreviation') or '',
-                    'CreatedAt': team.get('created_at'),
-                })
-            return jsonify({'success': True, 'count': len(teams_list), 'data': teams_list})
-        else:
-            return jsonify({'success': True, 'count': 0, 'data': []})
-    except Exception as e:
-        logging.error(f"Error fetching all teams: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/teams/<string:team_name>', methods=['GET'])
-def get_team_by_name(team_name):
-    try:
-        result = db.client.table('teams').select(
-            'team_name, manager_id, abbreviation, created_at'
-        ).ilike('team_name', team_name).limit(1).execute()
-
-        if result.data and len(result.data) > 0:
-            team = result.data[0]
-            return jsonify({
-                'success': True,
-                'data': {
-                    'TeamName': team.get('team_name') or 'Unknown',
-                    'ManagerId': team.get('manager_id'),
-                    'Abbreviation': team.get('abbreviation') or '',
-                    'CreatedAt': team.get('created_at'),
-                }
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Team not found'}), 404
-    except Exception as e:
-        logging.error(f"Error fetching team '{team_name}': {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/teams/manager/<int:manager_id>', methods=['GET'])
-def get_team_by_manager(manager_id):
-    try:
-        result = db.client.table('teams').select(
-            'team_name, manager_id, abbreviation, created_at'
-        ).eq('manager_id', manager_id).limit(1).execute()
-
-        if result.data and len(result.data) > 0:
-            team = result.data[0]
-            return jsonify({
-                'success': True,
-                'data': {
-                    'TeamName': team.get('team_name') or 'Unknown',
-                    'ManagerId': team.get('manager_id'),
-                    'Abbreviation': team.get('abbreviation') or '',
-                    'CreatedAt': team.get('created_at'),
-                }
-            })
-        else:
-            return jsonify({'success': False, 'error': 'No team found for this manager'}), 404
-    except Exception as e:
-        logging.error(f"Error fetching team for manager_id {manager_id}: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     import asyncio
