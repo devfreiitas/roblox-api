@@ -316,6 +316,63 @@ def get_team_by_manager(manager_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/statistics', methods=['GET'])
+def get_all_statistics():
+    try:
+        championships_result = db.client.table('championships').select('id, name').order('name').execute()
+        championships = championships_result.data or []
+
+        stats_result = db.client.table('statistics').select(
+            'roblox_user_id, championship_id, goals, assists, motms, cleansheets'
+        ).execute()
+        stats = stats_result.data or []
+
+        stats_by_championship = {}
+        for row in stats:
+            cid = row.get('championship_id')
+            if cid not in stats_by_championship:
+                stats_by_championship[cid] = []
+            stats_by_championship[cid].append({
+                'UserId': row.get('roblox_user_id'),
+                'Goals': row.get('goals') or 0,
+                'Assists': row.get('assists') or 0,
+                'Cleansheets': row.get('cleansheets') or 0,
+                'Motms': row.get('motms') or 0,
+            })
+
+        output = {}
+        for champ in championships:
+            output[champ['name']] = stats_by_championship.get(champ['id'], [])
+
+        return jsonify({'success': True, 'data': output})
+    except Exception as e:
+        logging.error(f"Error fetching statistics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/news', methods=['GET'])
+def get_all_news():
+    try:
+        result = db.client.table('news').select(
+            'title, description, image_asset_id, created_at'
+        ).order('created_at', desc=True).execute()
+
+        news_list = []
+        for row in (result.data or []):
+            asset_id = row.get('image_asset_id')
+            gfx = f"rbxassetid://{asset_id}" if asset_id else ""
+            news_list.append({
+                'Titulo': row.get('title') or '',
+                'Descricao': row.get('description') or '',
+                'GFX': gfx,
+            })
+
+        return jsonify({'success': True, 'count': len(news_list), 'data': news_list})
+    except Exception as e:
+        logging.error(f"Error fetching news: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     import asyncio
     asyncio.run(db.connect())
